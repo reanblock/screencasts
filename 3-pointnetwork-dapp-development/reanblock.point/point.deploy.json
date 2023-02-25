@@ -1,0 +1,10 @@
+{
+    "version": 0.1,
+    "target": "reanblock.point",
+    "keyvalue": {},
+    "contracts": [],
+    "rootDir": "app/_site",
+    "upgradable": true,
+    "pointSDKVersion": "0.0.10" ,
+    "pointNodeVersion": "0.1.78"
+  }
