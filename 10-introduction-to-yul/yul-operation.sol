@@ -73,7 +73,8 @@ contract YulOperations {
         result = 1;
 
         assembly {
-            if iszero(2) {
+            if not(2) { // unsafe!
+            // if iszero(2) { // use iszero instead!
                 result := 2
             }
         }
