@@ -10,8 +10,38 @@ contract YulStorage {
     uint96 public b=7;
     uint16 public c=5;
     uint8 public d=3;
+    uint8 public e=2;
     // end slot 3
 
+    // bitwise masking
+    // value and 0 = 0
+    // value and 1 = value
+    // value or  0 = value
+    function setPacked(uint16 _newValue) public {
+        assembly{
+            // _newValue = 0x000000000000000000000000000000000000000000000000000000000000000a
+
+            let oldValue := sload(c.slot)
+            // oldValue = 0x0203000500000000000000000000000700000000000000000000000000000009
+
+            let cleared := and(oldValue, 0xffff0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff)
+            // oldValue =   0x0203000500000000000000000000000700000000000000000000000000000009
+            // mask =       0xffff0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+            // clearedC =   0x0203000000000000000000000000000700000000000000000000000000000009
+
+            let shifted := shl(mul(c.offset, 8), _newValue)
+            // shifted =    0x0000000a00000000000000000000000000000000000000000000000000000000
+
+            let newValue := or(shifted, cleared)
+            // shifted  =   0x0000000a00000000000000000000000000000000000000000000000000000000
+            // clearedC =   0x0203000000000000000000000000000700000000000000000000000000000009
+            // newValue =   0x0203000a00000000000000000000000700000000000000000000000000000009
+
+            sstore(c.slot, newValue)
+        }
+    }
+
+    // get slot and offset for variable c
     function getSlotAndOffset() external pure returns(uint256 slot, uint256 offset) {
         assembly {
             slot := c.slot
