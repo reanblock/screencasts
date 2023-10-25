@@ -92,6 +92,53 @@ contract YulMemory {
         logHelper("ptr & msize (after accessing memory location 0xff)", ptrEnd, _msizeEnd);
     }
 
+    function abiEncode() public pure {
+        bytes32 ptrStart;
+        bytes32 ptrEnd;
+
+        assembly {
+            ptrStart := mload(0x40) // 0x80
+        }
+
+        abi.encode(uint256(12), uint128(13)); // 0xc, 0xd
+
+        assembly {
+            ptrEnd := mload(0x40)
+        }
+
+        logHelper("ptr (start)", ptrStart, "");
+        logHelper("ptr (end)", ptrEnd, "");
+    }
+
+     function abiEncodePacked() public pure {
+        bytes32 ptrStart;
+        bytes32 ptrEnd;
+
+        assembly {
+            ptrStart := mload(0x40)
+        }
+
+        /*
+            abi.encodePacked(uint256(14), uint128(15)); // 0xe, 0xf
+
+            0x40 -> 0xd0
+
+            0x80 -> 0x30    (48 bytes length follows...)
+            0xa0 -> 0xe     (uint256 14)
+            0xc0 -> 0xf     (uint128 15)
+
+            Thats why 0xd0 is the next free space in memory!
+        */
+        abi.encodePacked(uint256(14), uint128(15)); // 0xe, 0xf
+
+        assembly {
+            ptrEnd := mload(0x40)
+        }
+
+        logHelper("ptr (start)", ptrStart, "");
+        logHelper("ptr (end)", ptrEnd, "");
+    }
+
     function logHelper(string memory message, bytes32 value1, bytes32 value2) internal pure {
         console.log(message);
         console.logBytes(abi.encode(value1));
