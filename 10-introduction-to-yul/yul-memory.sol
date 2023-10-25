@@ -18,14 +18,10 @@ NOTE
 * Only 4 instructions: mload, mstore, mstore8 and msize
 */
 
-contract YulMemory {
-    event FreeMemoryPointerAddress(bytes32 ptr);
-    event FreeMemoryPointerAddressMSize(bytes32 ptr, bytes32 _msize);
+import "hardhat/console.sol";
 
-    struct MemData {
-        uint256 n1;
-        uint256 n2;
-    }
+contract YulMemory {
+    uint256[2] arrayInStorage = [10, 11]; // 0xa, 0xb
 
     function mstoreExample() public pure {
         assembly {
@@ -44,44 +40,61 @@ contract YulMemory {
 
     // function demonstrates how solidity automatically 
     // updates the free memory pointer
-    function freeMemoryPointer() public {
-        bytes32 ptr;
+    function freeMemoryPointer() public view {
+        bytes32 ptrStart;
+        bytes32 ptrEnd;
+
         assembly {
-            ptr := mload(0x40)
+            ptrStart := mload(0x40)
         }
-        emit FreeMemoryPointerAddress(ptr);
-        MemData memory data = MemData({n1: 1, n2: 2});
-        data.n1; // hides warning
+
+        uint256[2] memory arrayInMemory = arrayInStorage; // 64 bytes
+        arrayInMemory[0]; // hides compiler warning
+
         assembly {
-            ptr := mload(0x40)
+            ptrEnd := mload(0x40)
         }
-        emit FreeMemoryPointerAddress(ptr);
+
+        logHelper("ptr (start)", ptrStart, "");
+        logHelper("ptr (end)", ptrEnd, "");
     }
 
     // function demonstrates msize
-    function memSizeExample() public {
-        bytes32 ptr;
-        bytes32 _msize;
-        assembly {
-            ptr := mload(0x40)
-            _msize := msize()
-        }
-        emit FreeMemoryPointerAddressMSize(ptr, _msize);
-
-        MemData memory data = MemData({n1: 1, n2: 2});
-        data.n1; // hides warning
+    function memSizeExample() public view {
+        bytes32 ptrStart;
+        bytes32 ptrMid;
+        bytes32 ptrEnd;
+        bytes32 _msizeStart;
+        bytes32 _msizeMid;
+        bytes32 _msizeEnd;
 
         assembly {
-            ptr := mload(0x40)
-            _msize := msize()
+            ptrStart := mload(0x40)
+            _msizeStart := msize()
         }
-        emit FreeMemoryPointerAddressMSize(ptr, _msize);
+
+        uint256[2] memory arrayInMemory = arrayInStorage; // 64 bytes
+        arrayInMemory[0]; // hides compiler warning
 
         assembly {
-            pop(mload(0xff))
-            ptr := mload(0x40)
-            _msize := msize()
+            ptrMid := mload(0x40)
+            _msizeMid := msize()
         }
-        emit FreeMemoryPointerAddressMSize(ptr, _msize);
+
+        assembly {
+            pop(mload(0xff)) // manually access some data ahead of free mem ptr
+            ptrEnd := mload(0x40) // unchanged because solidity is unaway of the pop
+            _msizeEnd := msize() // now msize is further away from the free mem ptr
+        }
+
+        logHelper("ptr & msize (start)", ptrStart, _msizeStart);
+        logHelper("ptr & msize (after copy arrayInStorage to memory (64bytes))", ptrMid, _msizeMid);
+        logHelper("ptr & msize (after accessing memory location 0xff)", ptrEnd, _msizeEnd);
+    }
+
+    function logHelper(string memory message, bytes32 value1, bytes32 value2) internal pure {
+        console.log(message);
+        console.logBytes(abi.encode(value1));
+        console.logBytes(abi.encode(value2));
     }
 }
